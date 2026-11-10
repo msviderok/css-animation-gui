@@ -128,7 +128,6 @@
       if (data.format !== 'framecraft-dom-capture' || data.version !== 1 || typeof data.html !== 'string' || typeof data.styles !== 'string') throw new Error('This is not a supported Framecraft capture.');
       const html = new DOMParser().parseFromString(data.html, 'text/html');
       if (!html.querySelector('.marker-polygons') || !html.querySelector('.player[data-me="true"]')) throw new Error('This first version needs a scene containing the marker and player.');
-      if (!window.confirm('Replace the current project with this captured scene?')) return;
       $('previewDomCapture').click();
       data.srcdoc = $('domCapturePreview').srcdoc;
       if (!data.srcdoc) throw new Error('Preview the scene first.');

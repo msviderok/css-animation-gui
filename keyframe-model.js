@@ -36,6 +36,7 @@ window.FramecraftKeyframes = (() => {
       if (!track.keys.length) continue;
       const name = `fc-keyframes-${escapeName(track.id)}`;
       const frames = track.keys.map(key => `${Math.min(100, key.time / duration * 100)}% { ${valuesAt(track, key.time)} animation-timing-function: ${key.easing || 'linear'}; }`);
+      if (track.keys.at(-1).time < duration) frames.push(`100% { ${valuesAt(track, duration)} }`);
       const idle = track.idle && track.idle !== 'none' ? track.idle + ', ' : '';
       output += `html.framecraft-entry ${track.selector} { transition: none; animation: ${idle}${name} ${duration}ms linear forwards; }\n@keyframes ${name} {\n${frames.join('\n')}\n}\n`;
     }

@@ -471,7 +471,7 @@
     const metrics = timelineMetrics(), widths = metrics.phaseWidths;
     const sum = metrics.totalWidth;
     const ruler = `<div class="timeline-ruler"><div class="ruler-label">ELEMENT / TIME</div><div class="ruler-track" style="width:${sum}px">${state.phases.map((p, i) => `<div class="ruler-cell phase-ruler-cell" style="width:${widths[i]}px;flex:0 0 ${widths[i]}px"><button class="phase-name-edit" data-phase-name="${p.id}" title="Double-click to rename">${esc(p.name)}</button><div class="phase-ruler-controls">${phaseTimingControl(p, 'duration', 'PLAY')}${phaseTimingControl(p, 'wait', 'WAIT')}</div></div>${metrics.waitWidths[i] ? `<div class="ruler-gap" style="width:${metrics.waitWidths[i]}px;flex:0 0 ${metrics.waitWidths[i]}px"><span class="ruler-gap-label">wait ${formatPhaseTime(p.wait)}</span></div>` : ''}`).join('')}</div></div>`;
-    const rows = state.elements.map((item, ei) => `<div class="phase-track-row"><div class="track-name"><span class="track-color" style="background:${colors[ei % colors.length]}"></span><span class="track-label"><span data-element-edit="name" data-element-id="${item.id}" title="Double-click to edit">${esc(item.name)}</span><small data-element-edit="selector" data-element-id="${item.id}" title="Double-click to edit">${esc(item.selector)}</small></span>${ei > 0 ? `<button class="timeline-element-action delete-button" data-action="delete-element" data-id="${item.id}" title="Delete ${esc(item.name)}" aria-label="Delete ${esc(item.name)}">×</button>` : ''}</div><div class="track-lane" style="width:${sum}px">${state.phases.map((p, pi) => {
+    const rows = state.elements.map((item, ei) => `<div class="phase-track-row"><div class="track-name"><span class="track-color" style="background:${colors[ei % colors.length]}"></span><span class="track-label"><span data-element-edit="name" data-element-id="${item.id}" title="Double-click to edit">${esc(item.name)}</span><small data-element-edit="selector" data-element-id="${item.id}" title="Double-click to edit">${esc(item.selector)}</small></span>${ei > 0 || item.kind === 'dom' ? `<button class="timeline-element-action delete-button" data-action="delete-element" data-id="${item.id}" title="Delete ${esc(item.name)}" aria-label="Delete ${esc(item.name)}">×</button>` : ''}</div><div class="track-lane" style="width:${sum}px">${state.phases.map((p, pi) => {
       const c = ensureClip(p, item);
       return `<button class="track-clip ${c.deleted ? 'removed-clip' : ''} ${pi > 0 && !metrics.waitWidths[pi - 1] ? 'joins-prev' : ''} ${pi < state.phases.length - 1 && !metrics.waitWidths[pi] ? 'joins-next' : ''} ${c.enabled ? '' : 'inactive'} ${!c.deleted && p.id === state.selectedPhase && item.id === state.selectedElement ? 'selected' : ''}" style="width:${widths[pi]}px;flex:0 0 ${widths[pi]}px" data-action="${c.deleted ? 'restore-clip' : 'select-clip'}" data-context="clip" data-phase="${p.id}" data-element="${item.id}" title="${c.deleted ? 'Add clip: ' : ''}${esc(item.name)} · ${esc(p.name)}"><span>${c.deleted ? '+' : c.enabled ? `${item.kind === 'dom' ? 'CSS' : `${c.start}–${c.end} <span class="clip-frames">FR</span>`}` : '— inactive'}</span></button>${metrics.waitWidths[pi] ? `<span class="phase-gap" style="width:${metrics.waitWidths[pi]}px;flex:0 0 ${metrics.waitWidths[pi]}px" title="${p.wait}ms wait" aria-label="${p.wait}ms wait"><span class="sleep-icon" aria-hidden="true">zᶻᶻ</span></span>` : ''}`;
     }).join('')}</div></div>`).join('');
@@ -619,6 +619,13 @@
         // copy; the original capture still contains every marker for selection.
         const preview = new DOMParser().parseFromString(state.domScene.srcdoc, 'text/html');
         if (preview.querySelector('.marker[data-framecraft-selected]')) preview.querySelectorAll('.marker:not([data-framecraft-selected])').forEach(node => node.remove());
+        preview.querySelectorAll('[data-fc-sprite]').forEach(node => node.remove());
+        state.elements.filter(item => item.kind !== 'dom').forEach((item, index) => {
+          const node = preview.createElement('div'); node.setAttribute('data-fc-sprite', item.id);
+          node.style.cssText = `position:absolute;left:${(state.domScene.focus?.x || 300) + index * 100}px;top:${state.domScene.focus?.y || 200}px;width:${item.frameWidth}px;height:${item.frameHeight}px;background-image:url("${item.image || ''}");background-repeat:no-repeat;background-size:auto;image-rendering:pixelated;`;
+          preview.body.appendChild(node);
+        });
+        domStage.onload = () => { if (state.playheadMs > 0 || state.domScene?.authoring) seekDomScene(state.playheadMs); };
         domStage.srcdoc = '<!doctype html>' + preview.documentElement.outerHTML;
       }
       const viewport = state.domScene.viewport, focus = state.domScene.focus;
@@ -648,13 +655,13 @@
   }
 
   function slug(s) { return String(s || 'item').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'item'; }
-  function generateCss() {
-    if (state.domScene) return generateDomCss();
-    const trigger = `.${slug(state.className)}`;
+  function generateCss(spriteOnly = false) {
+    if (state.domScene && !spriteOnly) return generateDomCss();
+    const trigger = `.${spriteOnly && state.domScene ? state.domScene.authoring ? 'framecraft-entry' : 'marker-enter' : slug(state.className)}`;
     const total = totalMs();
     let css = `/* Generated by Framecraft · ${esc(state.name)} */\n/* Add ${trigger} to a parent to start the sequence. Remove and add it again to replay. */\n\n`;
     css += `/* Replace each image URL with the matching sprite path in your game. */\n`;
-    state.elements.forEach((item) => {
+    state.elements.filter(item => item.kind !== 'dom').forEach((item) => {
       const selector = `${trigger} ${item.selector}`;
       css += `${selector} {\n  width: ${item.frameWidth}px;\n  height: ${item.frameHeight}px;\n  box-sizing: content-box;\n  background-image: url("${escapeCssUrl(item.imageName ? `./${item.imageName}` : 'sprite.png')}");\n  background-repeat: no-repeat;\n  background-position: 0 0;\n  background-size: auto;\n}\n\n`;
       const active = state.phases.some((p) => p.clips.some((c) => c.enabled && c.elementId === item.id));
@@ -1073,13 +1080,16 @@
   }
   function generateDomCss() {
     syncAuthoringPhaseTimes();
-    if (state.domScene.authoring) return FramecraftKeyframes.compile(state.domScene.authoring.tracks, Math.max(1, totalMs()));
-    return `/* Framecraft: replace the existing marker-enter animation rules with these. Keep the scene’s base styles and @property registrations. */\n${domOverrideCss()}\n${state.domScene.authoredPlayback ? '' : state.domScene.cssDrivenTargets?.player ? state.domScene.playerKeyframes : domPlayerKeyframes()}\n/* Toggle marker-enter on html to play. Remove it to return to idle. */\n`;
+    if (state.domScene.authoring) return FramecraftKeyframes.compile(state.domScene.authoring.tracks, Math.max(1, totalMs())) + (state.elements.some(item => item.kind !== 'dom') ? '\n' + generateCss(true) : '');
+    return `/* Framecraft: replace the existing marker-enter animation rules with these. Keep the scene’s base styles and @property registrations. */\n${domOverrideCss()}\n${state.elements.some(item => item.kind !== 'dom') ? generateCss(true) : ''}\n${state.domScene.authoredPlayback ? '' : state.domScene.cssDrivenTargets?.player ? state.domScene.playerKeyframes : domPlayerKeyframes()}\n/* Toggle marker-enter on html to play. Remove it to return to idle. */\n`;
   }
   function startDomScene() {
     const d = domDocument(); if (!d) return false;
     resetDomScene();
-    const style = d.createElement('style'); style.id = 'framecraft-overrides'; style.textContent = state.domScene.authoring ? generateDomCss() : domOverrideCss() + '\n' + (state.domScene.authoredPlayback ? '' : state.domScene.cssDrivenTargets?.player ? state.domScene.playerKeyframes : domPlayerKeyframes()); for (const [url, value] of Object.entries(state.domScene.assets || {})) style.textContent = style.textContent.split(url).join(value); d.head.appendChild(style);
+    const style = d.createElement('style'); style.id = 'framecraft-overrides'; style.textContent = generateDomCss(); for (const [url, value] of Object.entries(state.domScene.assets || {})) style.textContent = style.textContent.split(url).join(value);
+    const trigger = state.domScene.authoring ? 'framecraft-entry' : 'marker-enter';
+    state.elements.filter(item => item.kind !== 'dom').forEach(item => { style.textContent = style.textContent.split(`.${trigger} ${item.selector}`).join(`.${trigger} [data-fc-sprite="${item.id}"]`); });
+    d.head.appendChild(style);
     void d.documentElement.offsetWidth;
     d.documentElement.classList.add(state.domScene.authoring ? 'framecraft-entry' : 'marker-enter');
     return true;
@@ -1091,7 +1101,7 @@
     // Flush style before collecting transitions so seeking never races a later reset.
     void d.documentElement.offsetWidth;
     d.getAnimations().forEach(animation => {
-      if (!animation.effect?.target?.closest?.('.marker-polygons, .player[data-me="true"]')) return;
+      if (!animation.effect?.target?.closest?.('.marker-polygons, .player[data-me="true"], [data-fc-sprite]')) return;
       animation.pause();
       animation.currentTime = Math.max(0, Math.min(totalMs(), Number(time) || 0));
     });
@@ -1101,7 +1111,7 @@
     cancelPlayback(); state.playheadMs = offset;
     if (!startDomScene()) { toast('Scene is still loading'); return; }
     void domDocument().documentElement.offsetWidth;
-    domDocument().getAnimations().forEach(animation => { if (animation.effect?.target?.closest?.('.marker-polygons, .player[data-me="true"]')) { animation.currentTime = offset; animation.play(); } });
+    domDocument().getAnimations().forEach(animation => { if (animation.effect?.target?.closest?.('.marker-polygons, .player[data-me="true"], [data-fc-sprite]')) { animation.currentTime = offset; animation.play(); } });
     state.playing = true; updatePlayheadUI(); updatePreviewButtons(); $('stageStatus').textContent = 'PLAYING SEQUENCE';
     const token = makeId(); state.runToken = token; const start = performance.now() - offset, duration = Math.max(1, totalMs());
     const tick = now => {
@@ -1186,8 +1196,47 @@
     visit(sheet.cssRules);
     return result.cssText;
   }
+  function appendDomCapture(capture) {
+    const importId = makeId(), prefix = `[data-framecraft-import="${importId}"]`;
+    const incoming = new DOMParser().parseFromString(capture.srcdoc, 'text/html');
+    if (incoming.querySelector('.marker[data-framecraft-selected]')) incoming.querySelectorAll('.marker:not([data-framecraft-selected])').forEach(node => node.remove());
+    const existing = state.domScene;
+    let scene;
+    if (existing) {
+      const doc = new DOMParser().parseFromString(existing.srcdoc, 'text/html');
+      const wrapper = doc.createElement('div'); wrapper.setAttribute('data-framecraft-import', importId); wrapper.style.cssText = (capture.htmlStyle || '') + ';position:absolute;inset:0;';
+      wrapper.innerHTML = incoming.body.innerHTML; doc.body.appendChild(wrapper);
+      const style = doc.createElement('style');
+      style.textContent = `@scope (${prefix}) { ${incoming.querySelector('style')?.textContent || ''} }`;
+      doc.head.appendChild(style);
+      existing.srcdoc = '<!doctype html>' + doc.documentElement.outerHTML;
+      existing.assets = { ...existing.assets, ...capture.assets }; existing.id = makeId(); scene = existing;
+    } else {
+      scene = state.domScene = { ...capture, id: makeId(), playerEntryDeclarations: importedPlayerEntry(capture.styles), playerKeyframes: importedPlayerKeyframes(capture.styles) };
+    }
+    const scope = existing ? prefix + ' ' : '';
+    const definitions = scene.authoring ? [
+      ['Player', '.player[data-me="true"]', 'translate: -50% -50%; opacity: 1;'],
+      ['Polygon faces', '.marker-polygons > *', 'filter: brightness(110%); --sy: calc(var(--side-static-h-fraction) + var(--wave) * var(--side-wave-amplitude));'],
+      ['Bottom polygon', '.marker-polygons::after', 'opacity: 1; clip-path: var(--bottom-clip-path);'],
+      ['Black void', '.marker-polygons::before', 'opacity: 0; --sx: 0; clip-path: var(--bottom-clip-path);'],
+    ] : [['Marker faces', '.marker-polygons > *', '--sy: 0; filter: brightness(120%);'], ['Player', '.player[data-me="true"]', '']];
+    const number = (scene.importCount || 1) + 1; scene.importCount = number;
+    const added = definitions.map(([name, selector, css]) => {
+      const template = scene.authoring?.tracks.find(track => track.name === name || track.name === 'Marker faces' && name === 'Polygon faces');
+      return { id: makeId(), name: `${name} (${number})`, kind: 'dom', domTarget: name === 'Player' ? 'player' : 'marker', selector: scope + selector, originalSelector: selector, importId, frameWidth: 1, frameHeight: 1, position: 50,
+        keys: [{ time: 0, css: template?.keys[0]?.css || css, easing: 'linear' }], idle: template?.idle || 'none' };
+    });
+    state.elements.push(...added);
+    if (scene.authoring) scene.authoring.tracks.push(...added);
+    for (const p of state.phases) for (const item of added) { const c = clip(item.id); c.start = c.end = 0; c.customCss = item.keys[0].css; p.clips.push(c); }
+    if (!state.phases.length) { const p = { id: makeId(), name: 'Phase 1', duration: 500, wait: 0, clips: added.map(item => ({ ...clip(item.id), start: 0, end: 0, customCss: item.keys[0].css })) }; state.phases.push(p); state.selectedPhase = p.id; }
+    state.selectedElement = added[0].id;
+    render(); toast(`${added.length} imported tracks added · existing animation preserved`);
+  }
   document.addEventListener('framecraft-import-dom', event => {
     cancelPlayback();
+    if (state.elements.length || state.phases.length) { appendDomCapture(event.detail); return; }
     const marker = { id: makeId(), kind: 'dom', domTarget: 'marker', name: 'Marker faces', selector: '.marker-polygons > *', frameWidth: 1, frameHeight: 1, position: 50, endState: 'hold' };
     const player = { id: makeId(), kind: 'dom', domTarget: 'player', name: 'Player', selector: ".player[data-me='true']", frameWidth: 1, frameHeight: 1, position: 50, endState: 'hold' };
     const mc = clip(marker.id), pc = clip(player.id); mc.end = pc.end = 0; mc.customCss = '--sy: 0;\nfilter: brightness(120%);';
@@ -1411,10 +1460,29 @@
 
   function deleteElement(id = state.selectedElement) {
     hideContextMenu(); const item = el(id); if (!item) return;
-    if (item.id === state.elements[0]?.id) { toast('The original element cannot be deleted'); return; }
+    if (item.kind !== 'dom' && item.id === state.elements[0]?.id) { toast('The original element cannot be deleted'); return; }
     if (!window.confirm(`Delete ${item.name}?`)) return;
     cancelPlayback(); state.elements = state.elements.filter((entry) => entry.id !== id);
     state.phases.forEach((p) => p.clips = p.clips.filter((c) => c.elementId !== id));
+    if (state.domScene?.authoring) state.domScene.authoring.tracks = state.domScene.authoring.tracks.filter(track => track.id !== id);
+    if (state.domScene) {
+      const doc = new DOMParser().parseFromString(state.domScene.srcdoc, 'text/html');
+      const style = doc.createElement('style');
+      doc.querySelectorAll(`[data-fc-sprite="${item.id}"]`).forEach(node => node.remove());
+      const pseudo = item.selector.match(/::(before|after)$/)?.[0] || '';
+      if (item.kind === 'dom') {
+        try {
+          doc.querySelectorAll(item.selector.replace(/::(before|after)$/, '')).forEach(node => {
+            if (!item.importId && node.closest('[data-framecraft-import]')) return;
+            const deleted = new Set((node.getAttribute('data-fc-deleted') || '').split(' ').filter(Boolean)); deleted.add(item.id);
+            node.setAttribute('data-fc-deleted', [...deleted].join(' '));
+          });
+        } catch {}
+      }
+      const selector = `[data-fc-deleted~="${item.id}"]${pseudo}`;
+      style.textContent = item.kind !== 'dom' ? '' : pseudo ? `${selector} { content: none !important; animation: none !important; }` : `${selector} { display: none !important; animation: none !important; }`;
+      doc.head.appendChild(style); state.domScene.srcdoc = '<!doctype html>' + doc.documentElement.outerHTML; state.domScene.id = makeId();
+    }
     if (state.selectedElement === id) state.selectedElement = state.elements[0]?.id || null;
     state.inspectorTab = 'element'; render();
   }

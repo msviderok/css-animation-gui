@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#10131a">
   <title>Framecraft — CSS choreography editor</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <link rel="stylesheet" href="styles.css?v=dom30">
+  <link rel="stylesheet" href="styles.css?v=dom33">
 </head>
 <body>
   <div class="app-shell">
@@ -104,7 +104,7 @@
         <label class="dom-import-label" for="domCapture">Scene capture</label>
         <textarea id="domCapture" spellcheck="false" placeholder="Paste the copied capture here"></textarea>
         <p id="domImportStatus" class="dialog-copy" role="status">The preview is isolated and does not run scripts.</p>
-        <div class="dialog-actions"><span class="muted-small">Import the scene to edit its timeline and CSS</span><div><button id="previewDomCapture" class="button button-quiet" type="button">Preview capture</button> <button id="useDomCapture" class="button button-primary" type="button">Use in timeline</button></div></div>
+        <div class="dialog-actions"><span class="muted-small">Import the scene to edit its timeline and CSS</span><div><button id="previewDomCapture" class="button button-quiet" type="button">Preview capture</button> <button id="useDomCapture" class="button button-primary" type="button">Add to timeline</button></div></div>
         <div id="domPreviewControls" class="dom-preview-controls" hidden><label for="domTrigger">Trigger class</label><input id="domTrigger" value="marker-enter" spellcheck="false"><button id="domPlay" class="button button-quiet" type="button">Play entry</button><button id="domReset" class="button button-quiet" type="button">Reset</button></div>
         <iframe id="domCapturePreview" title="Imported scene preview" sandbox="allow-same-origin" hidden></iframe>
       </div>
@@ -120,9 +120,9 @@
   </div>
   <script defer src="syntax-highlight.js?v=6"></script>
   <script src="css-scope.js?v=2"></script>
-  <script src="keyframe-model.js?v=3"></script>
+  <script src="keyframe-model.js?v=4"></script>
   <script src="pane-resize.js?v=1"></script>
-  <script src="app.js?v=dom30"></script>
-  <script src="dom-import.js?v=dom30"></script>
+  <script src="app.js?v=dom33"></script>
+  <script src="dom-import.js?v=dom33"></script>
 </body>
 </html>
