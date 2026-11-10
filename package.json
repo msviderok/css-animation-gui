@@ -1,0 +1,28 @@
+{
+  "name": "css-animation-gui",
+  "version": "1.0.0",
+  "description": "A lightweight browser editor for building frame-accurate sprite choreography and exporting CSS. New projects start empty.",
+  "main": "app.js",
+  "scripts": {
+    "build": "esbuild syntax/browser.mjs --bundle --format=iife --target=es2022 --outfile=syntax-highlight.js --minify",
+    "test": "node --test syntax/highlighter.test.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://msviderok@github.com/msviderok/css-animation-gui.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/msviderok/css-animation-gui/issues"
+  },
+  "homepage": "https://github.com/msviderok/css-animation-gui#readme",
+  "dependencies": {
+    "@tanstack/highlight": "^1.2.11"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
+  }
+}

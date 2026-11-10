@@ -19,3 +19,21 @@ The project JSON embeds sprite images as data URLs so it can be reopened as a se
 ## Quick actions
 
 Right-click a scene element or timeline clip for its context menu. Press `?` for the in-app shortcut reference. Common shortcuts include Space to play/stop, `C` to toggle looping, `H` to hide/show a clip, `Shift+P` to insert a phase, `Shift+E` to add a sprite, `⌘/Ctrl+D` to duplicate a phase, and Delete to remove the selected phase or extra sprite's clip. `⌘/Ctrl+Z` restores the last deleted phase or clip.
+
+## Importing the marker DOM animation
+
+1. Open **Import DOM** and copy the capture snippet.
+2. In the running game's DevTools, select a scene container containing the marker and player, then run the snippet in Console.
+3. Paste the capture into Framecraft, preview it, choose a marker, and select **Use in timeline**.
+4. Edit each phase's endpoint declarations in **Custom CSS**. Select the player track to edit its hop keyframes. Phase waits pause the player and marker; seeking uses the same generated animation as playback.
+5. Copy CSS back to the game, replacing its entry animation rules. Keep the scene's base styles and typed custom-property registrations. Captured asset URLs in exported rules should use the corresponding asset paths in the game build.
+
+The first DOM importer supports the marker/player scene. It preserves the scene's ancestor context and idle styles, embeds accessible active sprite images in the preview, and reports assets that need manual attention. Scene captures, embedded images, phases, and player keyframes are included in saved projects and local autosaves. Marker faces share one track; export keeps the game's broad marker selector.
+
+## Syntax highlighting
+
+The CSS pane sits beside the preview and timeline. CSS editors, exported CSS, capture JSON, and the capture snippet use TanStack Highlight. The editable fields retain native textarea selection and clipboard behavior; an aria-hidden highlighting layer supplies token colors.
+
+`syntax/highlighter.mjs` exports the same synchronous registry for Node/SSR and the browser, registering only CSS, JavaScript, and JSON. The app itself remains static and has no SSR runtime. Stable `th-*` classes are themed in `styles.css`; changing `data-theme` changes CSS variables without rebuilding code markup. Exact character decorations can be passed through `highlightCode` options.
+
+Run `npm ci`, `npm run build`, and `npm test` after changing the highlighter. The checked-in `syntax-highlight.js` browser bundle allows the site to remain runnable without a build step.

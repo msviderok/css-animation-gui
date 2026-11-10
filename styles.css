@@ -241,3 +241,47 @@
 .instant-tooltip::after{content:"";position:absolute;left:var(--tooltip-arrow-x,50%);width:8px;height:8px;background:inherit;transform:translateX(-50%) rotate(45deg)}
 .instant-tooltip[data-placement="top"]::after{bottom:-5px;border-right:1px solid #465366;border-bottom:1px solid #465366}
 .instant-tooltip[data-placement="bottom"]::after{top:-5px;border-left:1px solid #465366;border-top:1px solid #465366}
+.dom-import-dialog{width:min(780px,calc(100vw - 32px))}.dom-import-dialog .dom-import-label{display:block;margin:18px 0 7px;color:#a5adba;font-size:11px}.dom-import-dialog #domCapture{height:110px}.dom-import-dialog iframe{display:block;width:100%;height:300px;margin-top:16px;border:1px solid var(--line);border-radius:6px;background:#fff}.dom-import-dialog iframe[hidden]{display:none}
+.dom-preview-controls{display:flex;align-items:center;gap:8px;margin-top:16px;color:var(--muted-2);font-size:11px}.dom-preview-controls[hidden]{display:none}.dom-preview-controls input{width:150px;height:34px;padding:0 9px;color:var(--text);background:#10131a;border:1px solid var(--line);border-radius:6px}
+#domStage{position:absolute;inset:0;width:100%;height:100%;border:0;background:#171b24}#domStage[hidden]{display:none}.stage-scene[hidden]{display:none}
+
+.scene-css-editor{grid-column:1/-1;width:100%;padding:12px 0;border-top:1px solid var(--line)}.scene-css-editor summary{cursor:pointer;font-weight:600;color:var(--text)}.scene-css-editor p{font-size:11px;color:var(--muted-2);line-height:1.5}.scene-css-editor #domSceneCss{display:block;width:100%;min-height:360px;resize:vertical;padding:12px;background:var(--bg);color:var(--text);border:1px solid var(--line);font:11px/1.6 var(--mono);tab-size:2}.scene-css-mode{display:flex!important;align-items:center;gap:8px;margin:12px 0;font-size:11px}.scene-css-actions{display:flex;gap:8px;align-items:center;margin-top:10px}.scene-css-actions span{font-size:11px;color:var(--muted-2)}
+/* One semantic token tree; themes only change these variables. */
+:root{--syntax-text:#d8dfeb;--syntax-comment:#8b99ad;--syntax-keyword:#c5adff;--syntax-string:#b8df9b;--syntax-number:#f2ba88;--syntax-property:#9bccea;--syntax-selector:#e9b6d2}
+[data-theme="light"]{--syntax-text:#24334c;--syntax-comment:#65738a;--syntax-keyword:#6f35af;--syntax-string:#316c35;--syntax-number:#9c4e13;--syntax-property:#175d88;--syntax-selector:#963965}
+.th-code{color:var(--syntax-text)}.th-comment{color:var(--syntax-comment);font-style:italic}.th-keyword,.th-type,.th-meta{color:var(--syntax-keyword)}.th-string,.th-literal{color:var(--syntax-string)}.th-number{color:var(--syntax-number)}.th-property,.th-attr,.th-variable,.th-function{color:var(--syntax-property)}.th-selector,.th-tag{color:var(--syntax-selector)}
+.syntax-editor{position:relative;min-width:0;width:100%;background:var(--bg);border:1px solid var(--line);border-radius:5px;overflow:hidden}
+.syntax-paint{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.syntax-paint pre,.syntax-paint code{margin:0;border:0;background:none;font:inherit;white-space:pre;overflow:visible}
+.syntax-paint pre{padding:12px;min-height:100%;min-width:100%;width:max-content}
+.syntax-editor .syntax-input{position:relative;display:block;width:100%;margin:0!important;padding:12px!important;border:0!important;border-radius:0;background:transparent!important;color:transparent!important;caret-color:var(--syntax-text);-webkit-text-fill-color:transparent;white-space:pre!important;overflow:auto;tab-size:2;resize:vertical}
+.syntax-editor,.syntax-editor .syntax-input,.syntax-paint{font:11px/1.6 var(--mono)!important;letter-spacing:normal!important;tab-size:2}
+.syntax-input::selection{background:#7f8fa755}.syntax-input::placeholder{-webkit-text-fill-color:var(--muted)}
+.syntax-editor:focus-within{outline:1px solid #74899e;outline-offset:-1px}
+.workspace{max-width:1800px;grid-template-columns:minmax(0,1fr) minmax(370px,43%);align-items:start}
+.css-pane{position:sticky;top:12px;height:calc(100dvh - 92px);min-height:500px;display:flex;flex-direction:column;overflow:hidden}
+.css-pane-heading{padding:13px 14px;border-bottom:1px solid var(--line);font-weight:600}
+.css-pane .timeline-custom-css{display:flex;flex:1;flex-direction:column;gap:6px;min-height:0;overflow:auto;border-top:0}
+.css-pane .scene-css-editor{display:flex;flex-direction:column;flex:1;min-height:0;margin-top:8px}
+.css-pane .scene-css-editor:not([open]){flex:0}
+.css-pane .scene-css-editor .syntax-editor{flex:1;min-height:280px}
+.css-pane .scene-css-editor #domSceneCss{height:100%;min-height:280px;resize:none}
+.css-pane .scene-css-actions{flex-wrap:wrap;flex-shrink:0}
+.css-pane .timeline-custom-css:empty::after{content:'Select a clip to edit its CSS.';color:var(--muted);padding:12px 0}
+@media(max-width:950px){.workspace{grid-template-columns:minmax(0,1fr)}.css-pane{position:relative;top:0;height:70dvh;min-height:450px}}
+@media(forced-colors:active){.syntax-editor .syntax-input{color:CanvasText!important;-webkit-text-fill-color:CanvasText}.syntax-paint{display:none}}
+.capture-source{margin:10px 0;color:var(--muted-2);font-size:11px}.capture-source summary{cursor:pointer}.capture-source .th-code{max-height:260px;overflow:auto;padding:12px;background:var(--bg);font:11px/1.6 var(--mono);border:1px solid var(--line);border-radius:5px}.code-focus{background:#8ba5c322}
+/* The highlighted textarea must fill the editor, not its intrinsic 280px row. */
+.css-pane .scene-css-editor[open]::details-content{display:flex;flex-direction:column;flex:1;min-height:0}
+.css-pane .scene-css-editor .syntax-editor{position:relative;flex:1 1 0;min-height:280px}
+.css-pane .scene-css-editor .syntax-editor #domSceneCss{position:absolute;inset:0;width:100%;height:100%;min-height:0;max-height:none;resize:none}
+/* Keep the application in one viewport; panels own their overflow. */
+html,body{height:100%;min-height:0;overflow:hidden}
+.app-shell{height:100dvh;min-height:0;overflow:hidden}
+.workspace{flex:1;min-height:0;overflow:hidden;align-items:stretch}
+.editor-column{min-height:0;overflow:auto;overscroll-behavior:contain}
+.css-pane{position:relative;top:auto;height:100%;min-height:0;max-height:100%;overflow:hidden}
+.css-pane .timeline-custom-css{min-height:0;overflow:auto;overscroll-behavior:contain}
+.css-pane .scene-css-editor .syntax-editor{min-height:120px}
+@media(max-width:950px){.workspace{grid-template-columns:minmax(0,1fr) minmax(300px,43%);grid-template-rows:minmax(0,1fr)}.css-pane{position:relative;top:auto;height:100%;min-height:0}}
+.app-shell{--app-scale:1.15;zoom:var(--app-scale);height:calc(100dvh / var(--app-scale))}

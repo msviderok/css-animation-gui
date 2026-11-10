@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#10131a">
   <title>Framecraft — CSS choreography editor</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=dom13">
 </head>
 <body>
   <div class="app-shell">
@@ -20,6 +20,7 @@
       </div>
       <div class="top-actions">
         <span id="persistenceStatus" role="status" tabindex="0" aria-label="Checking local save" title="Checking local save">●</span>
+        <button id="importDom" class="button button-quiet" type="button">Import DOM</button>
         <button id="addElement" class="button button-quiet" type="button" title="Add sprite (Shift+E)">＋ Add sprite</button>
         <button id="openProject" class="button button-quiet" type="button"><span class="button-icon">↥</span> Open project</button>
         <button id="saveProject" class="button button-quiet" type="button"><span class="button-icon">↧</span> Save project</button>
@@ -39,6 +40,7 @@
                 <button id="zoomReset" class="zoom-value" type="button" title="Reset editor zoom">200%</button>
                 <button id="zoomIn" class="icon-button zoom-button" type="button" aria-label="Zoom in" title="Zoom in">+</button>
               </div>
+            <iframe id="domStage" title="Imported DOM scene" sandbox="allow-same-origin" hidden></iframe>
             <div id="stageScene" class="stage-scene">
               <div class="stage-grid"></div>
               <div class="stage-floor"></div>
@@ -64,11 +66,9 @@
             <div id="inspectorContent" class="sequence-effects"></div>
           </div>
           <div id="timeline" class="timeline-scroll"></div>
-          <div id="customCssControls" class="timeline-custom-css"></div>
         </div>
       </section>
-
-
+      <aside class="css-pane panel" aria-label="CSS editor"><div class="css-pane-heading">CSS editor</div><div id="customCssControls" class="timeline-custom-css"></div></aside>
     </main>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
     <div id="contextMenu" class="context-menu" role="menu" hidden></div>
@@ -93,6 +93,19 @@
         <p class="dialog-copy">Select a phase to insert, duplicate, or delete it. Undo the last phase deletion with ⌘ / Ctrl + Z.</p>
       </div>
     </dialog>
+    <dialog id="domImportDialog" class="export-dialog dom-import-dialog">
+      <div class="dialog-inner">
+        <div class="dialog-heading"><h2>Import a DOM scene</h2><button id="closeDomImport" class="icon-button" type="button" aria-label="Close">×</button></div>
+        <p class="dialog-copy">In your game’s DevTools Elements panel, select a container with the marker and player. Run this snippet in the Console, then paste the result below.</p>
+        <button id="copyCaptureSnippet" class="button button-quiet" type="button">Copy capture snippet</button>
+        <label class="dom-import-label" for="domCapture">Scene capture</label>
+        <textarea id="domCapture" spellcheck="false" placeholder="Paste the copied capture here"></textarea>
+        <p id="domImportStatus" class="dialog-copy" role="status">The preview is isolated and does not run scripts.</p>
+        <div class="dialog-actions"><span class="muted-small">Import the scene to edit its timeline and CSS</span><div><button id="previewDomCapture" class="button button-quiet" type="button">Preview capture</button> <button id="useDomCapture" class="button button-primary" type="button">Use in timeline</button></div></div>
+        <div id="domPreviewControls" class="dom-preview-controls" hidden><label for="domTrigger">Trigger class</label><input id="domTrigger" value="marker-enter" spellcheck="false"><button id="domPlay" class="button button-quiet" type="button">Play entry</button><button id="domReset" class="button button-quiet" type="button">Reset</button></div>
+        <iframe id="domCapturePreview" title="Imported scene preview" sandbox="allow-same-origin" hidden></iframe>
+      </div>
+    </dialog>
     <dialog id="cssDialog" class="export-dialog">
       <form method="dialog" class="dialog-inner">
         <div class="dialog-heading"><div><span class="section-kicker">READY TO USE</span><h2>Copy-pastable CSS</h2></div><button class="icon-button" aria-label="Close">×</button></div>
@@ -102,6 +115,9 @@
       </form>
     </dialog>
   </div>
-  <script src="app.js"></script>
+  <script defer src="syntax-highlight.js?v=1"></script>
+  <script src="css-scope.js?v=1"></script>
+  <script src="app.js?v=dom10"></script>
+  <script src="dom-import.js?v=dom10"></script>
 </body>
 </html>

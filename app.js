@@ -68,7 +68,7 @@
 
   function autosaveData() {
     return { format: 'framecraft-project', version: 1, name: state.name, className: state.className, loop: state.loop,
-      previewZoom: state.previewZoom, previewPanX: state.previewPanX, previewPanY: state.previewPanY, currentFrame: state.currentFrame,
+      domScene: state.domScene || null, previewZoom: state.previewZoom, previewPanX: state.previewPanX, previewPanY: state.previewPanY, currentFrame: state.currentFrame,
       selectedElement: state.selectedElement, selectedPhase: state.selectedPhase, inspectorTab: state.inspectorTab, elements: state.elements, phases: state.phases };
   }
   function openAutosaveDb() {
@@ -143,7 +143,7 @@
     if (valid) {
       state = { ...state, name: data.name || 'Untitled choreography', className: data.className || 'is-playing', loop: !!data.loop,
         previewZoom: 200, previewPanX: 0, previewPanY: 0,
-        elements: data.elements.map((item) => ({ ...item, position: 50 })), phases: data.phases,
+        elements: data.elements.map((item) => ({ ...item, position: 50 })), phases: data.phases, domScene: data.domScene || null,
         selectedElement: data.elements.some((item) => item.id === data.selectedElement) ? data.selectedElement : data.elements[0]?.id || null,
         selectedPhase: data.phases.some((item) => item.id === data.selectedPhase) ? data.selectedPhase : data.phases[0]?.id || null,
         inspectorTab: data.inspectorTab === 'element' ? 'element' : data.phases.length ? 'clip' : 'element',
@@ -173,7 +173,7 @@
     $('totalDuration').textContent = `${fmtTime(totalMs())} total`;
     $('timeline').innerHTML = renderTimeline();
     renderSelectedControls();
-    $('frameControls').innerHTML = renderFrameControls();
+    $('frameControls').innerHTML = state.domScene ? '' : renderFrameControls();
     renderActors();
     updateZoomUI();
     updateFrameTimelineUI();
@@ -449,7 +449,7 @@
     const ruler = `<div class="timeline-ruler"><div class="ruler-label">ELEMENT / TIME</div><div class="ruler-track" style="width:${sum}px">${state.phases.map((p, i) => `<div class="ruler-cell phase-ruler-cell" style="width:${widths[i]}px;flex:0 0 ${widths[i]}px"><button class="phase-name-edit" data-phase-name="${p.id}" title="Double-click to rename">${esc(p.name)}</button><div class="phase-ruler-controls">${phaseTimingControl(p, 'duration', 'PLAY')}${phaseTimingControl(p, 'wait', 'WAIT')}</div></div>${metrics.waitWidths[i] ? `<div class="ruler-gap" style="width:${metrics.waitWidths[i]}px;flex:0 0 ${metrics.waitWidths[i]}px"><span class="ruler-gap-label">wait ${formatPhaseTime(p.wait)}</span></div>` : ''}`).join('')}</div></div>`;
     const rows = state.elements.map((item, ei) => `<div class="phase-track-row"><div class="track-name"><span class="track-color" style="background:${colors[ei % colors.length]}"></span><span class="track-label"><span data-element-edit="name" data-element-id="${item.id}" title="Double-click to edit">${esc(item.name)}</span><small data-element-edit="selector" data-element-id="${item.id}" title="Double-click to edit">${esc(item.selector)}</small></span>${ei > 0 ? `<button class="timeline-element-action delete-button" data-action="delete-element" data-id="${item.id}" title="Delete ${esc(item.name)}" aria-label="Delete ${esc(item.name)}">×</button>` : ''}</div><div class="track-lane" style="width:${sum}px">${state.phases.map((p, pi) => {
       const c = ensureClip(p, item);
-      return `<button class="track-clip ${c.deleted ? 'removed-clip' : ''} ${pi > 0 && !metrics.waitWidths[pi - 1] ? 'joins-prev' : ''} ${pi < state.phases.length - 1 && !metrics.waitWidths[pi] ? 'joins-next' : ''} ${c.enabled ? '' : 'inactive'} ${!c.deleted && p.id === state.selectedPhase && item.id === state.selectedElement ? 'selected' : ''}" style="width:${widths[pi]}px;flex:0 0 ${widths[pi]}px" data-action="${c.deleted ? 'restore-clip' : 'select-clip'}" data-context="clip" data-phase="${p.id}" data-element="${item.id}" title="${c.deleted ? 'Add clip: ' : ''}${esc(item.name)} · ${esc(p.name)}"><span>${c.deleted ? '+' : c.enabled ? `${c.start}–${c.end} <span class="clip-frames">FR</span>` : '— inactive'}</span></button>${metrics.waitWidths[pi] ? `<span class="phase-gap" style="width:${metrics.waitWidths[pi]}px;flex:0 0 ${metrics.waitWidths[pi]}px" title="${p.wait}ms wait" aria-label="${p.wait}ms wait"><span class="sleep-icon" aria-hidden="true">zᶻᶻ</span></span>` : ''}`;
+      return `<button class="track-clip ${c.deleted ? 'removed-clip' : ''} ${pi > 0 && !metrics.waitWidths[pi - 1] ? 'joins-prev' : ''} ${pi < state.phases.length - 1 && !metrics.waitWidths[pi] ? 'joins-next' : ''} ${c.enabled ? '' : 'inactive'} ${!c.deleted && p.id === state.selectedPhase && item.id === state.selectedElement ? 'selected' : ''}" style="width:${widths[pi]}px;flex:0 0 ${widths[pi]}px" data-action="${c.deleted ? 'restore-clip' : 'select-clip'}" data-context="clip" data-phase="${p.id}" data-element="${item.id}" title="${c.deleted ? 'Add clip: ' : ''}${esc(item.name)} · ${esc(p.name)}"><span>${c.deleted ? '+' : c.enabled ? `${item.kind === 'dom' ? 'CSS' : `${c.start}–${c.end} <span class="clip-frames">FR</span>`}` : '— inactive'}</span></button>${metrics.waitWidths[pi] ? `<span class="phase-gap" style="width:${metrics.waitWidths[pi]}px;flex:0 0 ${metrics.waitWidths[pi]}px" title="${p.wait}ms wait" aria-label="${p.wait}ms wait"><span class="sleep-icon" aria-hidden="true">zᶻᶻ</span></span>` : ''}`;
     }).join('')}</div></div>`).join('');
     const boundaries = state.phases.length ? `<div class="playback-range" data-playback-range style="left:${timelineLabelWidth}px;width:${sum}px" aria-hidden="true"></div><div class="playback-boundary playback-start" style="left:${timelineLabelWidth}px" aria-hidden="true"><span>Start · 0ms</span></div><div class="playback-boundary playback-end" data-playback-end style="left:${timelineLabelWidth + sum}px" aria-hidden="true"><span>End · ${formatPhaseTime(totalMs())}</span></div>` : '';
     return `<div class="timeline">${boundaries}${ruler}${rows}<div class="timeline-time-ruler" data-time-ruler role="slider" tabindex="0" aria-label="Timeline position" aria-valuemin="0" aria-valuemax="${totalMs()}" aria-valuenow="${state.playheadMs}" style="left:${timelineLabelWidth}px;width:${sum}px">${timelineTimeTicks(metrics)}</div><div id="timelinePlayhead" class="timeline-playhead" style="left:${timelineLabelWidth + timelineOffset(state.playheadMs, metrics)}px"><button class="playhead-thumb" data-sequence-playhead type="button" role="slider" aria-label="Sequence playhead" aria-valuemin="0" aria-valuemax="${totalMs()}" aria-valuenow="${state.playheadMs}">${formatPhaseTime(Math.round(state.playheadMs))}</button></div></div>`;
@@ -528,11 +528,19 @@
   function visibilityIcon(visible) {
     return `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>${visible ? '' : '<path d="M3 3l18 18"/>'}</svg>`;
   }
+  function targetCss() {
+    const scene = state.domScene;
+    if (!scene.scopedCss) scene.scopedCss = window.FramecraftCssScope.split(scene.styles);
+    return currentElement()?.domTarget || 'marker';
+  }
   function renderSelectedControls() {
     const item = currentElement(), p = phase(), entry = item && p ? getClip(p.id, item.id) : null, c = entry && !entry.deleted ? entry : null;
     $('inspectorActions').innerHTML = c ? `<button class="inspector-icon clip-toggle-icon ${c.enabled ? 'is-active' : ''}" data-action="toggle-selected-clip" aria-label="${c.enabled ? 'Hide clip' : 'Show clip'}" title="${c.enabled ? 'Hide clip' : 'Show clip'} (H)" aria-pressed="${c.enabled}">${visibilityIcon(c.enabled)}</button><button class="inspector-icon" data-action="duplicate-phase" title="Duplicate selected phase (⌘/Ctrl+D)" aria-label="Duplicate selected phase">⧉</button>` : '';
     $('inspectorContent').innerHTML = renderInspector();
     $('customCssControls').innerHTML = c ? `<label for="selectedCustomCss">Custom CSS</label><textarea id="selectedCustomCss" class="code-field" data-field="clip.customCss" aria-label="Custom CSS for ${esc(p.name)}" placeholder="filter: brightness(1.2);&#10;box-shadow: 0 0 12px #b5f36c">${esc(c.customCss)}</textarea>` : '';
+    if (state.domScene && item?.domTarget === 'player') $('customCssControls').insertAdjacentHTML('beforeend', `<label for="domPlayerKeyframes">Player keyframes</label><textarea id="domPlayerKeyframes" class="code-field" spellcheck="false" aria-label="Player keyframes CSS">${esc(state.domScene.playerKeyframes || '')}</textarea>`);
+    if (state.domScene) { targetCss(); $('customCssControls').insertAdjacentHTML('beforeend', `<details class="scene-css-editor" ${state.domScene.cssEditorOpen !== false ? 'open' : ''}><summary>${item?.domTarget === 'player' ? 'Player CSS' : 'Marker CSS'}</summary><p>Edit this target’s selectors, pseudo-elements, clip paths, and keyframes. Shared page styles stay in the preview context.</p><label class="scene-css-mode"><input id="domAuthoredPlayback" type="checkbox" ${state.domScene.authoredPlayback ? 'checked' : ''}> Play scene CSS directly (skip generated timeline overrides)</label><textarea id="domSceneCss" spellcheck="false" aria-label="Target CSS">${esc(state.domScene.targetDrafts?.[targetCss()] ?? state.domScene.scopedCss[targetCss()])}</textarea><div class="scene-css-actions"><button id="applyDomSceneCss" class="button button-primary" type="button">Apply CSS</button><button id="copyDomSceneCss" class="button button-quiet" type="button">Copy target CSS</button><span id="sceneCssStatus" role="status"></span></div></details>`); }
+
   }
 
   function renderInspector() {
@@ -540,6 +548,7 @@
     if (!item || !p) return '';
     const c = getClip(p.id, item.id);
     if (c.deleted) return '';
+    if (item.kind === 'dom') return '<span class="muted-small">Edit this target’s entry declarations in Custom CSS below.</span>';
     return `<div class="sequence-effect-grid">${field('Opacity', effectControl('opacityTo', c.opacityTo, '%', 100))}${field('X', effectControl('xTo', c.xTo, '%'))}${field('Y', effectControl('yTo', c.yTo, '%'))}</div>`;
   }
 
@@ -558,6 +567,24 @@
   function renderActors() {
     $('stageElementName').textContent = currentElement()?.name || '';
     const stage = $('stage');
+    const domStage = $('domStage');
+    domStage.hidden = !state.domScene;
+    $('stageScene').hidden = !!state.domScene;
+    if (state.domScene) {
+      if (domStage.dataset.sceneId !== state.domScene.id) { domStage.dataset.sceneId = state.domScene.id; domStage.srcdoc = state.domScene.srcdoc; }
+      const viewport = state.domScene.viewport, focus = state.domScene.focus;
+      if (viewport && focus) {
+        const scale = Math.min(1, stage.clientWidth / 700, stage.clientHeight / 340);
+        domStage.style.width = `${viewport.width}px`; domStage.style.height = `${viewport.height}px`;
+        domStage.style.left = `${stage.clientWidth / 2 - focus.x * scale}px`;
+        domStage.style.top = `${stage.clientHeight / 2 - focus.y * scale}px`;
+        domStage.style.transform = `scale(${scale})`; domStage.style.transformOrigin = 'top left';
+      }
+      $('uploadPrompt').hidden = true;
+      stage.classList.toggle('playing', !!state.playing);
+      return;
+    }
+    domStage.removeAttribute('srcdoc'); domStage.dataset.sceneId = '';
     const actors = $('stageActors');
     actors.innerHTML = state.elements.map((item, i) => {
       const fit = Math.min(1, 96 / Math.max(1, item.frameWidth), 104 / Math.max(1, item.frameHeight));
@@ -573,6 +600,7 @@
 
   function slug(s) { return String(s || 'item').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'item'; }
   function generateCss() {
+    if (state.domScene) return generateDomCss();
     const trigger = `.${slug(state.className)}`;
     const total = totalMs();
     let css = `/* Generated by Framecraft · ${esc(state.name)} */\n/* Add ${trigger} to a parent to start the sequence. Remove and add it again to replay. */\n\n`;
@@ -635,6 +663,7 @@
     });
   }
   function renderSequenceAt(time) {
+    if (state.domScene) { seekDomScene(time); return; }
     let elapsed = 0;
     state.elements.forEach((item) => {
       const actor = document.querySelector(`[data-actor="${item.id}"]`);
@@ -700,6 +729,7 @@
   }
   async function runSequence() {
     if (!state.elements.length || !state.phases.length) { toast('Add an element and a phase first'); return; }
+    if (state.domScene) { runDomSequence(); return; }
     cancelPlayback(); state.playheadMs = 0; state.playing = true; renderActors(); $('stageStatus').textContent = 'PLAYING SEQUENCE'; updatePreviewButtons(); updatePlayheadUI();
     const runToken = makeId(); state.runToken = runToken;
     const startedAt = performance.now(), duration = Math.max(1, totalMs());
@@ -746,7 +776,7 @@
       updatePlayheadUI(); updatePreviewButtons(); $('stageStatus').textContent = 'SEQUENCE COMPLETE';
     }
   }
-  function cancelPlayback() { state.runToken = null; if (playbackRaf) cancelAnimationFrame(playbackRaf); playbackRaf = 0; activeAnimations.forEach((a) => { try { a.cancel(); } catch {} }); activeAnimations = []; state.playing = false; }
+  function cancelPlayback() { if (state.domScene) resetDomScene(); state.runToken = null; if (playbackRaf) cancelAnimationFrame(playbackRaf); playbackRaf = 0; activeAnimations.forEach((a) => { try { a.cancel(); } catch {} }); activeAnimations = []; state.playing = false; }
   function updateLoopUI() {
     $('loopToggle').setAttribute('aria-pressed', String(state.loop));
     $('loopToggle').classList.toggle('is-active', state.loop);
@@ -807,6 +837,173 @@
     };
     reader.readAsDataURL(file);
   }
+  function domDocument() { return $('domStage').contentDocument; }
+  function resetDomScene() {
+    const d = domDocument();
+    if (!d) return;
+    d.documentElement.classList.remove('marker-enter');
+    d.querySelector('#framecraft-overrides')?.remove();
+  }
+  function domDeclarations(c) { return String(c?.customCss || '').trim(); }
+  function domPlayerKeyframes() {
+    const sheet = new CSSStyleSheet(); sheet.replaceSync(state.domScene.playerKeyframes || '');
+    const rule = Array.from(sheet.cssRules).find(r => r.name === 'player-marker-hop');
+    if (!rule) return '';
+    const frames = Array.from(rule.cssRules).flatMap(r => r.keyText.split(',').map(offset => ({ offset: parseFloat(offset) / 100, style: Object.fromEntries(Array.from(r.style, key => [key, r.style.getPropertyValue(key)])) }))).sort((a, b) => a.offset - b.offset);
+    const player = state.elements.find(item => item.domTarget === 'player');
+    const enabled = p => p.clips.some(c => c.elementId === player?.id && c.enabled && !c.deleted);
+    const active = state.phases.reduce((sum, p) => sum + (enabled(p) ? Number(p.duration) : 0), 0);
+    const total = Math.max(1, totalMs());
+    const coordinates = value => { let depth = 0, start = 0, out = []; for (let i = 0; i < value.length; i++) { if (value[i] === '(') depth++; if (value[i] === ')') depth--; if (value[i] === ' ' && !depth) { if (i > start) out.push(value.slice(start, i)); start = i + 1; } } if (start < value.length) out.push(value.slice(start)); return out; };
+    const sample = progress => {
+      const before = frames.filter(f => f.offset <= progress).at(-1) || frames[0], after = frames.find(f => f.offset >= progress) || frames.at(-1);
+      if (!before || !after) return {};
+      if (before.offset === after.offset) return before.style;
+      const t = (progress - before.offset) / (after.offset - before.offset), values = { ...before.style };
+      for (const key of Object.keys(after.style)) {
+        if (!before.style[key]) continue;
+        if (key === 'translate') { const a = coordinates(before.style[key]), b = coordinates(after.style[key]); if (a.length === b.length) values[key] = a.map((v, i) => `calc((${v}) * ${1 - t} + (${b[i]}) * ${t})`).join(' '); }
+        else if (/^-?[\d.]+$/.test(before.style[key]) && /^-?[\d.]+$/.test(after.style[key])) values[key] = String(Number(before.style[key]) * (1 - t) + Number(after.style[key]) * t);
+      }
+      return values;
+    };
+    const output = [], point = (time, progress) => output.push(`${time / total * 100}% { ${Object.entries(sample(progress)).map(([k, v]) => `${k}: ${v};`).join(' ')} }`);
+    let elapsed = 0, played = 0;
+    point(0, 0);
+    for (const p of state.phases) {
+      const duration = Number(p.duration), end = played + (enabled(p) ? duration : 0);
+      if (enabled(p) && active) for (const frame of frames) { const position = frame.offset * active; if (position > played && position < end) point(elapsed + position - played, frame.offset); }
+      elapsed += duration; played = end; point(elapsed, active ? played / active : 0);
+      elapsed += Number(p.wait); point(elapsed, active ? played / active : 0);
+    }
+    return `@keyframes player-marker-hop {\n${output.join('\n')}\n}`;
+  }
+  function domOverrideCss() {
+    if (state.domScene.authoredPlayback) return '';
+    if (!state.domScene.playerEntryDeclarations) state.domScene.playerEntryDeclarations = importedPlayerEntry(state.domScene.styles);
+    const total = Math.max(1, totalMs());
+    let css = `html.marker-enter .marker-polygons { animation: none; }\nhtml.marker-enter .player[data-me="true"] { ${state.domScene.playerEntryDeclarations || ''} animation: player-marker-hop ${total}ms linear forwards; }\n`;
+    state.elements.filter(item => item.kind === 'dom').forEach(item => {
+      const name = `fc-dom-${slug(item.domTarget || item.name)}`;
+      const values = item.domTarget === 'marker' ? { '--sy': 'calc(var(--side-static-h-fraction) + var(--wave) * var(--side-wave-amplitude))', filter: 'brightness(110%)' } : {};
+      const declaration = text => {
+        const style = document.createElement('span').style; style.cssText = text;
+        return Object.fromEntries(Array.from(style, key => [key, style.getPropertyValue(key)]));
+      };
+      const blocks = [];
+      const point = time => blocks.push(`${(time / total * 100).toFixed(5)}% { ${Object.entries(values).map(([key, value]) => `${key}: ${value};`).join(' ')} }`);
+      point(0);
+      let elapsed = 0;
+      state.phases.forEach(p => {
+        point(elapsed);
+        const c = p.clips.find(c => c.elementId === item.id && c.enabled && !c.deleted);
+        if (c) Object.assign(values, declaration(domDeclarations(c)));
+        elapsed += Number(p.duration); point(elapsed);
+        elapsed += Number(p.wait); point(elapsed);
+      });
+      if (!Object.keys(values).length) return;
+      const native = item.domTarget === 'player' ? `player-marker-hop ${total}ms linear forwards, ` : '';
+      css += `html.marker-enter ${item.selector} { transition: none; animation: ${native}${name} ${total}ms linear forwards; }\n@keyframes ${name} {\n${blocks.join('\n')}\n}\n`;
+    });
+    return css;
+  }
+  function generateDomCss() {
+    return `/* Framecraft: replace the existing marker-enter animation rules with these. Keep the scene’s base styles and @property registrations. */\n${domOverrideCss()}\n${state.domScene.authoredPlayback ? '' : domPlayerKeyframes()}\n/* Toggle marker-enter on html to play. Remove it to return to idle. */\n`;
+  }
+  function startDomScene() {
+    const d = domDocument(); if (!d) return false;
+    resetDomScene();
+    const style = d.createElement('style'); style.id = 'framecraft-overrides'; style.textContent = domOverrideCss() + '\n' + (state.domScene.authoredPlayback ? '' : domPlayerKeyframes()); for (const [url, value] of Object.entries(state.domScene.assets || {})) style.textContent = style.textContent.split(url).join(value); d.head.appendChild(style);
+    void d.documentElement.offsetWidth;
+    d.documentElement.classList.add('marker-enter');
+    return true;
+  }
+  function seekDomScene(time) {
+    const d = domDocument(); if (!d) return;
+    if (time <= 0) { resetDomScene(); return; }
+    if (!d.documentElement.classList.contains('marker-enter')) startDomScene();
+    // Flush style before collecting transitions so seeking never races a later reset.
+    void d.documentElement.offsetWidth;
+    d.getAnimations().forEach(animation => {
+      if (!animation.effect?.target?.closest?.('.marker-polygons, .player[data-me="true"]')) return;
+      animation.pause();
+      animation.currentTime = Math.max(0, Math.min(totalMs(), Number(time) || 0));
+    });
+  }
+  function runDomSequence() {
+    cancelPlayback(); state.playheadMs = 0;
+    if (!startDomScene()) { toast('Scene is still loading'); return; }
+    state.playing = true; updatePreviewButtons(); $('stageStatus').textContent = 'PLAYING SEQUENCE';
+    const token = makeId(); state.runToken = token; const start = performance.now(), duration = Math.max(1, totalMs());
+    const tick = now => {
+      if (state.runToken !== token) return;
+      const elapsed = now - start; state.playheadMs = Math.min(duration, elapsed); updatePlayheadUI();
+      if (elapsed < duration) playbackRaf = requestAnimationFrame(tick);
+      else if (state.loop) { state.playing = false; runDomSequence(); }
+      else { state.playing = false; playbackRaf = 0; updatePreviewButtons(); $('stageStatus').textContent = 'SEQUENCE COMPLETE'; }
+    };
+    playbackRaf = requestAnimationFrame(tick);
+  }
+  document.addEventListener('input', event => {
+    if (event.target.id === 'domSceneCss' && state.domScene) { (state.domScene.targetDrafts ||= {})[targetCss()] = event.target.value; scheduleAutosave(); }
+  });
+  document.addEventListener('toggle', event => { if (event.target.matches?.('.scene-css-editor') && state.domScene) state.domScene.cssEditorOpen = event.target.open; }, true);
+  document.addEventListener('click', async event => {
+    if (!state.domScene) return;
+    if (event.target.closest('#copyDomSceneCss')) {
+      try { await navigator.clipboard.writeText($('domSceneCss').value); $('sceneCssStatus').textContent = 'Scene CSS copied'; }
+      catch { $('domSceneCss').select(); $('sceneCssStatus').textContent = 'Select and copy the CSS'; }
+    }
+    if (!event.target.closest('#applyDomSceneCss')) return;
+    cancelPlayback();
+    const target = targetCss();
+    state.domScene.scopedCss[target] = $('domSceneCss').value;
+    const scoped = state.domScene.scopedCss;
+    const source = [scoped.context, scoped.marker, scoped.player].join('\n');
+    const doc = new DOMParser().parseFromString(state.domScene.srcdoc, 'text/html');
+    let previewCss = source;
+    for (const [url, value] of Object.entries(state.domScene.assets || {})) previewCss = previewCss.split(url).join(value);
+    if (state.domScene.focus) previewCss += '\n.marker:not([data-framecraft-selected]) { visibility: hidden !important; }';
+    doc.querySelector('style').textContent = previewCss;
+    state.domScene.styles = source;
+    state.domScene.authoredPlayback = $('domAuthoredPlayback').checked;
+    state.domScene.playerEntryDeclarations = importedPlayerEntry(source);
+    state.domScene.playerKeyframes = importedPlayerKeyframes(source);
+    state.domScene.srcdoc = '<!doctype html>' + doc.documentElement.outerHTML;
+    state.domScene.id = makeId(); state.playheadMs = 0; render();
+    $('sceneCssStatus').textContent = 'Applied · preview reset';
+  });
+  document.addEventListener('input', event => { if (event.target.id === 'domPlayerKeyframes' && state.domScene) { state.domScene.playerKeyframes = event.target.value; scheduleAutosave(); } });
+  function importedPlayerKeyframes(source) {
+    const match = /@keyframes\s+player-marker-hop\s*\{/.exec(source || '');
+    if (!match) return '';
+    let depth = 1, index = match.index + match[0].length;
+    for (; index < source.length && depth; index++) {
+      if (source[index] === '{') depth++;
+      else if (source[index] === '}') depth--;
+    }
+    return depth ? '' : source.slice(match.index, index);
+  }
+  function importedPlayerEntry(source) {
+    const sheet = new CSSStyleSheet(); sheet.replaceSync(source || '');
+    let result = '';
+    const visit = rules => { for (const rule of rules) {
+      if (rule.selectorText?.includes('html.marker-enter') && rule.selectorText.includes('.player')) result = rule.style.cssText;
+      if (rule.cssRules) visit(rule.cssRules);
+    } };
+    visit(sheet.cssRules);
+    return result;
+  }
+  document.addEventListener('framecraft-import-dom', event => {
+    cancelPlayback();
+    const marker = { id: makeId(), kind: 'dom', domTarget: 'marker', name: 'Marker faces', selector: '.marker-polygons > *', frameWidth: 1, frameHeight: 1, position: 50, endState: 'hold' };
+    const player = { id: makeId(), kind: 'dom', domTarget: 'player', name: 'Player', selector: ".player[data-me='true']", frameWidth: 1, frameHeight: 1, position: 50, endState: 'hold' };
+    const mc = clip(marker.id), pc = clip(player.id); mc.end = pc.end = 0; mc.customCss = '--sy: 0;\nfilter: brightness(120%);';
+    const p = { id: makeId(), name: 'Marker enter', duration: 5000, wait: 0, clips: [mc, pc] };
+    state.elements = [marker, player]; state.phases = [p]; state.domScene = { ...event.detail, id: makeId(), playerEntryDeclarations: importedPlayerEntry(event.detail.styles), playerKeyframes: importedPlayerKeyframes(event.detail.styles) };
+    state.name = 'Marker enter'; state.className = 'marker-enter'; state.selectedElement = marker.id; state.selectedPhase = p.id; state.playheadMs = 0; state.inspectorTab = 'clip'; render();
+    toast('Scene imported into timeline');
+  });
   function saveProject() {
     state.name = $('projectName').value.trim() || 'Untitled choreography';
     const data = autosaveData();
@@ -820,7 +1017,7 @@
         const data = JSON.parse(reader.result);
         if (data.format !== 'framecraft-project' || !Array.isArray(data.elements) || !Array.isArray(data.phases)) throw new Error('Unsupported project');
         deletedPhases = [];
-        state.name = data.name || 'Untitled choreography'; state.className = data.className || 'is-playing'; state.loop = !!data.loop;
+        state.domScene = data.domScene || null; state.name = data.name || 'Untitled choreography'; state.className = data.className || 'is-playing'; state.loop = !!data.loop;
         state.previewZoom = 200; state.previewPanX = 0; state.previewPanY = 0;
         state.elements = data.elements.map((item) => ({ ...item, position: 50 })); state.phases = data.phases;
         state.selectedElement = state.elements[0]?.id || null; state.selectedPhase = state.phases[0]?.id || null; state.inspectorTab = state.phases.length ? 'clip' : 'element'; cancelPlayback(); render(); toast('Project opened');
@@ -828,9 +1025,9 @@
     }; reader.readAsText(file);
   }
   async function copyCss() {
-    const css = generateCss(); $('cssOutput').value = css; $('dialogClass').textContent = `.${slug(state.className)}`;
+    const css = generateCss(); $('cssOutput').value = css; $('cssStatus').textContent = state.domScene ? 'Append these overrides after the existing game rules.' : 'CSS is generated from your sequence.'; $('dialogClass').textContent = `.${slug(state.className)}`;
     if (!$('cssDialog').open) $('cssDialog').showModal();
-    try { await navigator.clipboard.writeText(css); $('cssStatus').textContent = 'Copied to clipboard · replace the sprite image paths.'; toast('CSS copied to clipboard'); }
+    try { await navigator.clipboard.writeText(css); $('cssStatus').textContent = state.domScene ? 'Copied · append after the existing marker-enter rules.' : 'Copied to clipboard · replace the sprite image paths.'; toast('CSS copied to clipboard'); }
     catch { $('cssStatus').textContent = 'Select and copy the CSS below.'; }
   }
   function saveFieldDraft(target) {
