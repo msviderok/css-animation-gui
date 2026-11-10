@@ -37,3 +37,13 @@ The CSS pane sits beside the preview and timeline. CSS editors, exported CSS, ca
 `syntax/highlighter.mjs` exports the same synchronous registry for Node/SSR and the browser, registering only CSS, JavaScript, and JSON. The app itself remains static and has no SSR runtime. Stable `th-*` classes are themed in `styles.css`; changing `data-theme` changes CSS variables without rebuilding code markup. Exact character decorations can be passed through `highlightCode` options.
 
 Run `npm ci`, `npm run build`, and `npm test` after changing the highlighter. The checked-in `syntax-highlight.js` browser bundle allows the site to remain runnable without a build step.
+
+Drag the divider between the preview and CSS pane to resize them; double-click to reset. The focused divider supports arrow keys (Shift for larger steps), Home, and End. The split is saved locally.
+
+The target CSS editor shows only `marker-enter` rules and referenced keyframes. Skin/action variants, unrelated animations, base styles, and typed `@property` registrations remain in the preview context rather than the editable animation fragment. Typed registrations are retained because removing them can make custom-property animations interpolate discretely.
+
+## Creating a new DOM entry
+
+Use **Create new animation** after importing the marker scene. This creates independent player, polygon-face, bottom-polygon, and black-void tracks, each with an initial-state template. The marker's idle spin and face fluctuations continue; the imported player jump is not activated.
+
+Select a track, position the playhead, and edit its keyframe declarations. Valid edits automatically record a keyframe at that time; incomplete edits retain the last valid keyframe. Use the step buttons for approximately 16.7 ms increments, and the following-segment selector for easing or stepped changes. The original-entry reference is available separately, and **Resume new animation** restores your work. Exported CSS uses `framecraft-entry` on `html` and requires the captured base styles and typed property registrations.

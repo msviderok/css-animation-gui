@@ -5,7 +5,7 @@
   "main": "app.js",
   "scripts": {
     "build": "esbuild syntax/browser.mjs --bundle --format=iife --target=es2022 --outfile=syntax-highlight.js --minify",
-    "test": "node --test syntax/highlighter.test.mjs"
+    "test": "node --test syntax/*.test.mjs"
   },
   "repository": {
     "type": "git",
@@ -20,7 +20,9 @@
   },
   "homepage": "https://github.com/msviderok/css-animation-gui#readme",
   "dependencies": {
-    "@tanstack/highlight": "^1.2.11"
+    "@tanstack/highlight": "^1.2.11",
+    "@tanstack/virtual-core": "^3.19.11",
+    "css-tree": "^3.2.1"
   },
   "devDependencies": {
     "esbuild": "^0.28.2"

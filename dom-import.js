@@ -147,6 +147,7 @@
       }
       const doc = new DOMParser().parseFromString(data.html, 'text/html');
       doc.querySelectorAll('script,iframe,object,embed,base,meta[http-equiv]').forEach(node => node.remove());
+      if (doc.querySelector('.marker[data-framecraft-selected]')) doc.querySelectorAll('.marker:not([data-framecraft-selected])').forEach(node => node.remove());
       doc.querySelectorAll('*').forEach(node => Array.from(node.attributes).forEach(attr => { if (/^on/i.test(attr.name)) node.removeAttribute(attr.name); }));
       const escapeAttr = value => String(value || '').replace(/[&"<>]/g, c => ({'&':'&amp;','"':'&quot;','<':'&lt;','>':'&gt;'}[c]));
       const base = new URL(data.url);

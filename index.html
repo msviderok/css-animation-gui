@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#10131a">
   <title>Framecraft — CSS choreography editor</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <link rel="stylesheet" href="styles.css?v=dom13">
+  <link rel="stylesheet" href="styles.css?v=dom30">
 </head>
 <body>
   <div class="app-shell">
@@ -59,16 +59,18 @@
           <div class="timeline-heading">
             <div class="sequence-heading-row">
               <div class="sequence-title"><h2>Choreography</h2></div>
-              <div class="sequence-transport"><span class="transport-label">Position</span><div class="global-scrub" aria-label="Sequence position"><span id="sequenceTimeLabel" class="scrub-time">0.0s</span><input id="sequenceScrubber" class="sequence-scrubber" type="range" min="0" max="0" step="10" value="0" aria-label="Scrub whole animation sequence" disabled><span id="sequenceTotalLabel" class="scrub-time total-time-control" data-total-time role="button" tabindex="0" aria-label="Edit total animation duration" title="Click to edit total duration · Shift-drag vertically to scrub · Command for 50ms steps · Option-click to reset">0.0s</span></div></div>
+              <div class="sequence-transport"><span class="transport-label">Position</span><div class="global-scrub" aria-label="Sequence position"><span id="sequenceTimeLabel" class="scrub-time">0.0s</span><input id="sequenceScrubber" class="sequence-scrubber" type="range" min="0" max="0" step="10" value="0" aria-label="Scrub whole animation sequence" disabled><span id="sequenceTotalLabel" class="scrub-time total-time-control" data-total-time role="button" tabindex="0" aria-label="Edit total animation duration" title="Click to edit total duration · Shift-drag vertically to scrub · Command for 50ms steps · Option-click to reset">0.0s</span><button id="setDefaultDuration" class="duration-default-button" type="button" aria-label="Set current duration as default" title="Set current duration as the Option-click reset default"><svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m3 8 3 3 7-7"/></svg></button></div></div>
               <div class="timeline-tools"><span id="totalDuration" class="duration-pill">0.0s total</span><button id="playPreview" class="transport-button" type="button" aria-label="Play sequence" title="Play sequence (Space)"><span id="playIcon" aria-hidden="true">▶</span><span id="playLabel" class="visually-hidden">Play sequence</span></button><button id="resetPreview" class="transport-button" type="button" aria-label="Reset sequence" title="Reset sequence">↺</button><button id="loopToggle" class="transport-button" type="button" aria-label="Loop sequence" aria-pressed="false" title="Loop sequence (C)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M17 2l4 4-4 4M21 6H7a4 4 0 0 0-4 4M7 22l-4-4 4-4M3 18h14a4 4 0 0 0 4-4"/></svg></button><div id="inspectorActions" class="sequence-actions"></div><button id="addPhaseTop" class="button button-quiet small-button" type="button">＋ Add phase</button></div>
             </div>
 
             <div id="inspectorContent" class="sequence-effects"></div>
+            <div id="domTimelineTools" class="dom-timeline-tools"></div>
           </div>
           <div id="timeline" class="timeline-scroll"></div>
         </div>
       </section>
-      <aside class="css-pane panel" aria-label="CSS editor"><div class="css-pane-heading">CSS editor</div><div id="customCssControls" class="timeline-custom-css"></div></aside>
+      <div id="paneDivider" class="pane-divider" role="separator" tabindex="0" aria-label="Resize preview and CSS panes" aria-orientation="vertical" aria-controls="cssPane" aria-valuemin="25" aria-valuemax="75" aria-valuenow="57" title="Drag to resize · double-click to reset"></div>
+      <aside id="cssPane" class="css-pane panel" aria-label="CSS editor"><div class="css-pane-heading">CSS editor</div><div id="customCssControls" class="timeline-custom-css"></div></aside>
     </main>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
     <div id="contextMenu" class="context-menu" role="menu" hidden></div>
@@ -76,7 +78,8 @@
       <div class="dialog-inner">
         <div class="dialog-heading"><div><span class="section-kicker">QUICK ACTIONS</span><h2>Keyboard shortcuts</h2></div><button id="closeShortcuts" class="icon-button" type="button" aria-label="Close">×</button></div>
         <div class="shortcut-list">
-          <div><span>Play / stop preview</span><kbd>Space</kbd></div>
+          <div><span>Play / pause at playhead</span><kbd>Space</kbd></div>
+          <div><span>Return to start · preserve play/pause</span><kbd>Enter</kbd></div>
           <div><span>Toggle sequence looping</span><kbd>C</kbd></div>
           <div><span>Hide / show selected clip</span><kbd>H</kbd></div>
           <div><span>Copy CSS</span><kbd>⌘ / Ctrl + Shift + C</kbd></div>
@@ -115,9 +118,11 @@
       </form>
     </dialog>
   </div>
-  <script defer src="syntax-highlight.js?v=1"></script>
-  <script src="css-scope.js?v=1"></script>
-  <script src="app.js?v=dom10"></script>
-  <script src="dom-import.js?v=dom10"></script>
+  <script defer src="syntax-highlight.js?v=6"></script>
+  <script src="css-scope.js?v=2"></script>
+  <script src="keyframe-model.js?v=3"></script>
+  <script src="pane-resize.js?v=1"></script>
+  <script src="app.js?v=dom30"></script>
+  <script src="dom-import.js?v=dom30"></script>
 </body>
 </html>
